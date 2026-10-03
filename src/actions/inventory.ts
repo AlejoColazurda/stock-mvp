@@ -66,23 +66,26 @@ export async function discountStock(data: {
   }
 }
 
-export async function getProducts(query = ''): Promise<Product[]> {
-  const products = await prisma.product.findMany({
-    orderBy: { name: 'asc' },
-  })
-
-  const q = normalize(query.trim())
-  if (!q) {
-    return products.map(toProduct)
-  }
-
-  return products
-    .filter((product) => {
-      const name = normalize(product.name)
-      const sku = normalize(product.sku ?? '')
-      return name.includes(q) || sku.includes(q)
+export async function getProducts(query = ''): Promise<{ products: Product[]; error?: string }> {
+  try {
+    const products = await prisma.product.findMany({
+      orderBy: { name: 'asc' },
     })
-    .map(toProduct)
+
+    const q = normalize(query.trim())
+    const visible = q
+      ? products.filter((product) => {
+          const name = normalize(product.name)
+          const sku = normalize(product.sku ?? '')
+          return name.includes(q) || sku.includes(q)
+        })
+      : products
+
+    return { products: visible.map(toProduct) }
+  } catch (error) {
+    console.error('getProducts failed', error)
+    return { products: [], error: 'No se pudo leer el stock. Revisá la conexión con la base.' }
+  }
 }
 
 export async function getMovements() {

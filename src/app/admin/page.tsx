@@ -31,7 +31,8 @@ export default async function AdminPage() {
     )
   }
 
-  const [products, staff] = await Promise.all([getProducts(), listStaff()])
+  const [catalog, staff] = await Promise.all([getProducts(), listStaff()])
+  const products = catalog.products
 
   return (
     <main className="mx-auto max-w-5xl px-4 pb-10 pt-8">

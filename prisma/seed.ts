@@ -4,11 +4,6 @@ import { hashPin, nameKey } from '../src/lib/pin'
 const prisma = new PrismaClient()
 
 async function main() {
-  await prisma.stockMovement.deleteMany()
-  await prisma.session.deleteMany()
-  await prisma.staff.deleteMany()
-  await prisma.product.deleteMany()
-
   const productos = [
     {
       sku: 'RUE-22',
@@ -52,19 +47,24 @@ async function main() {
     },
   ]
 
-  for (const p of productos) {
-    await prisma.product.create({ data: p })
+  const productCount = await prisma.product.count()
+  if (productCount === 0) {
+    await prisma.product.createMany({ data: productos })
   }
 
-  await prisma.staff.create({
-    data: {
-      name: 'Admin',
-      nameKey: nameKey('Admin'),
-      pinHash: hashPin('1234'),
-      isAdmin: true,
-      canViewMovements: true,
-    },
-  })
+  const adminKey = nameKey('Admin')
+  const admin = await prisma.staff.findUnique({ where: { nameKey: adminKey } })
+  if (!admin) {
+    await prisma.staff.create({
+      data: {
+        name: 'Admin',
+        nameKey: adminKey,
+        pinHash: hashPin('1234'),
+        isAdmin: true,
+        canViewMovements: true,
+      },
+    })
+  }
 
   console.log('Seed completado con éxito.')
 }

@@ -13,10 +13,16 @@ export async function getSession(): Promise<Access | null> {
   const token = jar.get(COOKIE)?.value
   if (!token) return null
 
-  const session = await prisma.session.findUnique({
-    where: { token },
-    include: { staff: true },
-  })
+  let session
+  try {
+    session = await prisma.session.findUnique({
+      where: { token },
+      include: { staff: true },
+    })
+  } catch (error) {
+    console.error('getSession failed', error)
+    return null
+  }
 
   if (!session || session.expiresAt.getTime() <= Date.now()) {
     if (session) await prisma.session.delete({ where: { id: session.id } }).catch(() => undefined)
